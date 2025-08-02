@@ -1,95 +1,81 @@
 package repository
 
 import (
-	"database/sql"
-	"fmt"
+	"errors"
+	"gorm.io/gorm"
 	"rest-api/model"
 )
 
 type ProductRepository struct {
-	connection *sql.DB
+	db *gorm.DB
 }
 
-func NewProductRepository(connection *sql.DB) ProductRepository {
-	return ProductRepository{
-		connection: connection,
+func NewProductRepository(db *gorm.DB) *ProductRepository {
+	return &ProductRepository{
+		db: db,
 	}
 }
 
 func (pr *ProductRepository) GetProducts() ([]model.Product, error) {
-
-	query := "SELECT id, product_name, price FROM product"
-	rows, err := pr.connection.Query(query)
-
-	if err != nil {
-		fmt.Println(err)
-		return []model.Product{}, err
+	var products []model.Product
+	if err := pr.db.Order("id ASC").Find(&products).Error; err != nil {
+		return nil, err
 	}
 
-	var productList []model.Product
-	var productObj model.Product
+	return products, nil
+}
 
-	for rows.Next() {
-		err := rows.Scan(
-			&productObj.ID,
-			&productObj.Name,
-			&productObj.Price)
-
-		if err != nil {
-			fmt.Println(err)
-			return []model.Product{}, err
+func (pr *ProductRepository) GetProductByID(id int) (*model.Product, error) {
+	var product model.Product
+	if err := pr.db.First(&product, id).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("product not found")
 		}
-
-		productList = append(productList, productObj)
+		return nil, err
 	}
 
-	rows.Close()
-	return productList, nil
+	return &product, nil
 }
 
 func (pr *ProductRepository) CreateProduct(product model.Product) (int, error) {
-
-	var id int
-	query, err := pr.connection.Prepare("INSERT INTO product (product_name, price) VALUES ($1, $2) RETURNING id")
-	if err != nil {
-		fmt.Println(err)
+	if err := pr.db.Create(&product).Error; err != nil {
 		return 0, err
 	}
 
-	err = query.QueryRow(product.Name, product.Price).Scan(&id)
-
-	if err != nil {
-		fmt.Println(err)
-		return 0, err
-	}
-
-	query.Close()
-	return id, nil
+	return product.ID, nil
 }
 
-func (pr *ProductRepository) GetProductById(id_product int) (*model.Product, error) {
-	query, err := pr.connection.Prepare("SELECT * FROM product WHERE id = $1")
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-
+func (pr *ProductRepository) UpdateProductByID(id int, data model.Product) (*model.Product, error) {
 	var product model.Product
-
-	err = query.QueryRow(id_product).Scan(
-		&product.ID,
-		&product.Name,
-		&product.Price,
-	)
-
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, nil
+	if err := pr.db.First(&product, id).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("product not found")
 		}
-
 		return nil, err
 	}
 
-	query.Close()
+	product.Name = data.Name
+	product.Price = data.Price
+
+	if err := pr.db.Save(&product).Error; err != nil {
+		return nil, err
+	}
+
+	return &product, nil
+}
+
+func (pr *ProductRepository) DeleteProductByID(id int) (*model.Product, error) {
+	var product model.Product
+	if err := pr.db.First(&product, id).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("product not found")
+		}
+		return nil, err
+	}
+
+	if err := pr.db.Delete(&product).Error; err != nil {
+		return nil, err
+	}
+
 	return &product, nil
 }

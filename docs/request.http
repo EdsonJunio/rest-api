@@ -1,0 +1,46 @@
+### Get all products
+# Busca todos os produtos
+GET http://localhost:8080/products
+Accept: application/json
+
+###
+
+### Create a new product
+# Cria um novo produto
+POST http://localhost:8080/product
+Content-Type: application/json
+
+{
+  "name": "Product Test",
+  "price": 99.90
+}
+
+###
+
+### Get product by ID
+# Busca produto por ID
+GET http://localhost:8080/product/1
+Accept: application/json
+
+###
+
+### Update product by ID
+# Atualiza produto por ID
+PUT http://localhost:8080/products/16
+Content-Type: application/json
+Accept: application/json
+
+{
+  "name": "Guaraná",
+  "price": 5.99
+}
+
+###
+
+### Delete product by ID
+# Deleta produto por ID
+DELETE http://localhost:8080/products/16
+Accept: application/json
+
+###
+

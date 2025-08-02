@@ -1,0 +1,63 @@
+# Arquivos e pastas de build/compilação Go
+/bin/
+/build/
+/dist/
+*.exe
+*.test
+*.out
+
+# Dependências
+vendor/
+
+# Arquivos de configuração sensíveis
+.env
+.env.*
+.secret
+*.pem
+*.key
+
+# Arquivo de exemplo de variáveis de ambiente
+!.env.example
+
+# Arquivos de log
+*.log
+
+# Banco de dados local
+*.db
+*.sqlite
+gorm.db
+
+# Cobertura de testes Go
+coverage.out
+*.coverprofile
+
+# Arquivos temporários
+*.tmp
+*.bak
+*.old
+*~
+
+# Diretórios e arquivos de IDEs/editores
+.vscode/
+.idea/
+*.swp
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-compose.override.yml
+*.local
+
+# Node modules
+node_modules/
+
+# Arquivos e pastas cache
+/cache/
+.tmp/
+.cache/
+tmp/
+
+# Outros
+*.log.*
