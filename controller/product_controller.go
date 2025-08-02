@@ -2,7 +2,10 @@ package controller
 
 import (
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 	"net/http"
+	"rest-api/configuration/logger"
+	"rest-api/configuration/rest_err"
 	"rest-api/model"
 	"rest-api/usecase"
 	"strconv"
@@ -19,11 +22,13 @@ func NewProductController(usecase *usecase.ProductUsecase) *ProductController {
 }
 
 func (p *ProductController) GetProducts(ctx *gin.Context) {
+	logger.Info("Received GET /products request")
+
 	products, err := p.productUseCase.GetProducts()
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		logger.Error("Failed to retrieve products", err)
+		restErr := rest_err.NewInternalServerError("Error retrieving products")
+		ctx.JSON(restErr.Code, restErr)
 		return
 	}
 
@@ -35,26 +40,28 @@ func (p *ProductController) GetProducts(ctx *gin.Context) {
 
 func (p *ProductController) GetProductByID(ctx *gin.Context) {
 	id := ctx.Param("productId")
+	logger.Info("Received GET /product/:productId request", zap.String("productId", id))
+
 	if id == "" {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"error": "productId is required",
-		})
+		restErr := rest_err.NewBadRequestError("productId is required")
+		logger.Error("Product ID missing in request", nil)
+		ctx.JSON(restErr.Code, restErr)
 		return
 	}
 
-	productId, err := strconv.Atoi(id)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"error": "productId must be a number",
-		})
+	productId, convErr := strconv.Atoi(id)
+	if convErr != nil {
+		restErr := rest_err.NewBadRequestError("productId must be a number")
+		logger.Error("Invalid productId parameter", convErr, zap.String("param", id))
+		ctx.JSON(restErr.Code, restErr)
 		return
 	}
 
 	product, err := p.productUseCase.GetProductByID(productId)
 	if err != nil {
-		ctx.JSON(http.StatusNotFound, gin.H{
-			"error": "product not found",
-		})
+		restErr := rest_err.NewNotFoundError("product not found")
+		logger.Error("Product not found", err, zap.Int("productId", productId))
+		ctx.JSON(restErr.Code, restErr)
 		return
 	}
 
@@ -64,19 +71,21 @@ func (p *ProductController) GetProductByID(ctx *gin.Context) {
 }
 
 func (p *ProductController) CreateProduct(ctx *gin.Context) {
+	logger.Info("Received POST /product request")
+
 	var product model.Product
 	if err := ctx.BindJSON(&product); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid JSON payload",
-		})
+		restErr := rest_err.NewBadRequestError("Invalid JSON payload")
+		logger.Error("Invalid JSON payload in CreateProduct", err)
+		ctx.JSON(restErr.Code, restErr)
 		return
 	}
 
 	insertedProduct, err := p.productUseCase.CreateProduct(product)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Could not create product",
-		})
+		restErr := rest_err.NewInternalServerError("Could not create product")
+		logger.Error("Failed to create product", err)
+		ctx.JSON(restErr.Code, restErr)
 		return
 	}
 
@@ -87,33 +96,35 @@ func (p *ProductController) CreateProduct(ctx *gin.Context) {
 
 func (p *ProductController) UpdateProductByID(ctx *gin.Context) {
 	idParam := ctx.Param("id")
-	id, err := strconv.Atoi(idParam)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"error": "id must be a number",
-		})
+	logger.Info("Received PUT /products/:id request", zap.String("id", idParam))
+
+	id, convErr := strconv.Atoi(idParam)
+	if convErr != nil {
+		restErr := rest_err.NewBadRequestError("id must be a number")
+		logger.Error("Invalid id parameter", convErr, zap.String("param", idParam))
+		ctx.JSON(restErr.Code, restErr)
 		return
 	}
 
 	var input model.Product
 	if err := ctx.ShouldBindJSON(&input); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"error": "invalid request body",
-		})
+		restErr := rest_err.NewBadRequestError("invalid request body")
+		logger.Error("Invalid request body in UpdateProductByID", err)
+		ctx.JSON(restErr.Code, restErr)
 		return
 	}
 
 	updatedProduct, err := p.productUseCase.UpdateProductByID(id, input)
 	if err != nil {
 		if err.Error() == "product not found" {
-			ctx.JSON(http.StatusNotFound, gin.H{
-				"error": "product not found",
-			})
+			restErr := rest_err.NewNotFoundError("product not found")
+			logger.Error("Product not found for update", err, zap.Int("id", id))
+			ctx.JSON(restErr.Code, restErr)
 			return
 		}
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"error": "error updating product",
-		})
+		restErr := rest_err.NewInternalServerError("error updating product")
+		logger.Error("Failed to update product", err, zap.Int("id", id))
+		ctx.JSON(restErr.Code, restErr)
 		return
 	}
 
@@ -124,26 +135,27 @@ func (p *ProductController) UpdateProductByID(ctx *gin.Context) {
 
 func (p *ProductController) DeleteProductByID(ctx *gin.Context) {
 	idParam := ctx.Param("id")
-	productId, err := strconv.Atoi(idParam)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"error": "id must be a number",
-		})
+	logger.Info("Received DELETE /products/:id request", zap.String("id", idParam))
+
+	productId, convErr := strconv.Atoi(idParam)
+	if convErr != nil {
+		restErr := rest_err.NewBadRequestError("id must be a number")
+		logger.Error("Invalid id parameter in DeleteProductByID", convErr, zap.String("param", idParam))
+		ctx.JSON(restErr.Code, restErr)
 		return
 	}
 
-	_, err = p.productUseCase.DeleteProductByID(productId)
+	_, err := p.productUseCase.DeleteProductByID(productId)
 	if err != nil {
 		if err.Error() == "product not found" {
-			ctx.JSON(http.StatusNotFound, gin.H{
-				"error": "product not found",
-			})
+			restErr := rest_err.NewNotFoundError("product not found")
+			logger.Error("Product not found for deletion", err, zap.Int("id", productId))
+			ctx.JSON(restErr.Code, restErr)
 			return
 		}
-
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"error": "error deleting product",
-		})
+		restErr := rest_err.NewInternalServerError("error deleting product")
+		logger.Error("Failed to delete product", err, zap.Int("id", productId))
+		ctx.JSON(restErr.Code, restErr)
 		return
 	}
 
