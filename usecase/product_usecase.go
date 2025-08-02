@@ -5,39 +5,37 @@ import (
 	"rest-api/repository"
 )
 
-type ProductUsercase struct {
-	repository repository.ProductRepository
+type ProductUsecase struct {
+	repository *repository.ProductRepository
 }
 
-func NewProductUseCase(repo repository.ProductRepository) ProductUsercase {
-	return ProductUsercase{
+func NewProductUsecase(repo *repository.ProductRepository) *ProductUsecase {
+	return &ProductUsecase{
 		repository: repo,
 	}
 }
 
-func (pu *ProductUsercase) GetProducts() ([]model.Product, error) {
+func (pu *ProductUsecase) GetProducts() ([]model.Product, error) {
 	return pu.repository.GetProducts()
 }
 
-func (pu *ProductUsercase) CreateProduct(product model.Product) (model.Product, error) {
+func (pu *ProductUsecase) GetProductByID(id int) (*model.Product, error) {
+	return pu.repository.GetProductByID(id)
+}
 
+func (pu *ProductUsecase) CreateProduct(product model.Product) (model.Product, error) {
 	productId, err := pu.repository.CreateProduct(product)
 	if err != nil {
 		return model.Product{}, err
 	}
-
 	product.ID = productId
-
 	return product, nil
-
 }
 
-func (pu *ProductUsercase) GetProductById(id_product int) (*model.Product, error) {
+func (pu *ProductUsecase) UpdateProductByID(id int, data model.Product) (*model.Product, error) {
+	return pu.repository.UpdateProductByID(id, data)
+}
 
-	product, err := pu.repository.GetProductById(id_product)
-	if err != nil {
-		return nil, err
-	}
-
-	return product, nil
+func (pu *ProductUsecase) DeleteProductByID(id int) (*model.Product, error) {
+	return pu.repository.DeleteProductByID(id)
 }
