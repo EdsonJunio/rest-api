@@ -11,27 +11,27 @@ POST http://localhost:8080/product
 Content-Type: application/json
 
 {
-  "name": "Product Test",
-  "price": "1"
+  "name": "Product Testt",
+  "price": 1
 }
 
 ###
 
 ### Get product by ID
 # Busca produto por ID
-GET http://localhost:8080/product/19
+GET http://localhost:8080/product/18
 Accept: application/json
 
 ###
 
 ### Update product by ID
 # Atualiza produto por ID
-PUT http://localhost:8080/products/19
+PUT http://localhost:8080/products/18
 Content-Type: application/json
 Accept: application/json
 
 {
-  "name": "Guaraná",
+  "name": "Guaranáaa",
   "price": 5.99
 }
 
@@ -39,7 +39,7 @@ Accept: application/json
 
 ### Delete product by ID
 # Deleta produto por ID
-DELETE http://localhost:8080/products/19
+DELETE http://localhost:8080/products/18
 Accept: application/json
 
 ###
